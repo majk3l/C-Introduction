@@ -272,7 +272,7 @@ Istnieją także operatory przypisania dla pozostałych operacji bitowych ```|=`
 # Comparison (porównania)
   
 | Operator | Przykład | Rezultat|
-|:-:|:-:|:-:|:- |
+|:-:|:-:|:-:|
 |```==```| ```a == b```|1 jeśli wartości ```a``` i ```b``` są równe, inaczej 0|
 |```!=```| ```a != b```|1 jeśli wartości ```a``` i ```b``` są różne, inaczej 0|
 |```<``` |```a < b```|1 jeśli wartość ```a``` mniejsza od  ```b```, inaczej 0|
