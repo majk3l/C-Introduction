@@ -193,7 +193,7 @@ default : <--optional
 # Wyjście standardowe
 
 - Funkcje printf i scanf
-- Składnia wykorzystuje tzw. format specifiers rozpoczynające się od znaku %
+- Składnia wykorzystuje tzw. *format specifiers* rozpoczynające się od znaku ```%```
 
 ---
 
@@ -205,26 +205,27 @@ int printf ( const char * format, ... );
 
 ---
 # format specifiers
-
-
-%c Single character.
-%d Signed decimal integer.
-%e Floating-point number, e-notation.
-%E Floating-point number, e-notation.
-%f Floating-point number, decimal notation.
+| modyfikator | znaczenie |
+|----|------------------------|
+| %c | pojedynczy znak (char) |
+| %d | liczba całkowita ze znakiem w formacie dziesiętnym |
+| %e | liczba zmiennoprzecinkowa w zapisie naukowym (1.2345e+2) |
+| %E | liczba zmiennoprzecinkowa w zapisie naukowym (1.2345E+2) |
+| %f | liczba zmiennoprzecinkowa w formacie dziesiętnym |
 
 ---
 # format specifiers
 
-
-%i Signed decimal integer (same as %d ).
-%o Unsigned octal integer.
-%p A pointer.
-%s Character string.
-%u Unsigned decimal integer.
-%x Unsigned hexadecimal integer, using hex digits 0f .
-%X Unsigned hexadecimal integer, using hex digits 0F .
-%% Prints a percent sign.
+| modyfikator | znaczenie |
+|----|------------------------|
+| %i | liczba całkowita ze znakiem w formacie dziesiętnym |
+| %o | liczba całkowita bez znaku w formacie ósemkowym |
+| %p | wskaźnik |
+| %s | łańcuch tekstowy |
+| %u | liczba całkowita bez znaku w formacie dziesiętnym |
+| %x | liczba całkowita bez znaku w formacie szesnastkowym, z użyciem małych liter (0f) |
+| %X | liczba całkowita bez znaku w formacie szesnastkowym, z użyciem wielkich liter (0F) |
+| %% | wypisuje znak procent (%) |
 
 ---
 
