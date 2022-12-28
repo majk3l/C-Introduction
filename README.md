@@ -49,7 +49,7 @@ EK_03 Student zna mechanizmy tworzenia tablic w języku C, oraz mechanizmy dynam
 
 EK_04 Student potrafi wykorzystać odpowiednie struktury danych oraz konstrukcje programistyczne dostępne w języku C przy tworzeniu programów rozwiązujących zadane problemy.
  
-EK_05 Student potrafiotrafi tworzyć programy z wykorzystaniem standardowych bibliotek programistycznych dostępnych w języku C. 
+EK_05 Student potrafi tworzyć programy z wykorzystaniem standardowych bibliotek programistycznych dostępnych w języku C. 
 
 ### 3.3. Treści programowe 
 
