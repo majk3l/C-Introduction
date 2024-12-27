@@ -1,27 +1,25 @@
+<!--
+---
+marp: true
+footer: "| PwJC | Wykład #1 | dr inż. Michał Kępski | https://github.com/majk3l/C-Introduction/"
+_footer: "| e-mail: mkepski@ur.edu.pl |"
+paginate: true
+_paginate: false
+---
+-->
 
-# Podstawy programowania w języku C
-### Wykład #1: Wprowadzenie
+# programowanie w języku C
+### Wykład #1: Wprowadzenie.
 *dr inż. Michał Kępski* 
 
 <!-- footer: | e-mail: mkepski@ur.edu.pl | 
 -->
 
 ---
-<!-- footer: | PPwJC | Wykład #1: Wprowadzenie | dr inż. Michał Kępski | https://github.com/majk3l/C-Introduction/
+<!-- footer: | PwJC | Wykład #1 | dr inż. Michał Kępski | https://github.com/majk3l/C-Introduction/
      page_number: true -->
 
 
-## Sprawy organizacyjne 
-
-
-- 15 godzin wykładu
-- konsultacje: czwartek, 14:45-16:00; 201B4
-- sylabus: https://goo.gl/y5neNk
-- materiały z wykładu dostępne na GitHubie prowadzącego:
-https://github.com/majk3l/C-Introduction/
-- dodatkowe zestawy ćwiczeń (dla chętnych) w repozytorium, katalog ```exercises```
-
----
 ## Czego dotyczy wykład?
 &nbsp;
 ### Głównie programowania w języku C
@@ -37,14 +35,14 @@ https://github.com/majk3l/C-Introduction/
 - znajomość C jest przydatna przy dalszej nauce (C++, Java).
   
 ---
-## Czy warto uczyć się C w 2018?
+## Czy warto współcześnie uczyć się C?
 
 - Opracowany w 1972 roku.
 - Nie jest obiektowy (jak większość współczesnych języków).
 - Niezbyt wygodne zarządzanie pamięcią.
 ---
 
-## Czy warto uczyć się C w 2018? Tak, bo:
+## Czy warto współcześnie uczyć się C? Tak, bo:
 
 - Pozwala bardziej zrozumieć mechanizmy działania komputera.
 - Jest ciągle popularny w świecie IT (programowanie systemowe, systemy wbudowane, mikrokontrolery).
@@ -60,7 +58,8 @@ https://github.com/majk3l/C-Introduction/
 - Podstawowe pojęcia;
 - Języki programowania - podział;
 - Pierwszy program w C;
-- Struktura programu, typy, funkcje.
+- Struktura programu;
+- Kompilacja i uruchomienie;
 
 ---
 
@@ -80,7 +79,7 @@ które współdziałają w celu uruchamiania programów (aplikacji) użytkownika
 ## Informacja to bity + kontekst
 
 &nbsp;
-```
+```c
 #include <stdio.h>
 
 int main()
@@ -107,9 +106,9 @@ programy napisane w języku C przechowujemy z rozszerzeniem ```.c```, np. ```hel
 ## Informacja to bity + kontekst
 
 #### &nbsp;
-#### Plik z kodem źródłowym zawiera sekwencję bajtów.
-#### &nbsp;
-#### Każdy z nich reprezentuje jeden znak w kodzie ASCII.
+- #### Plik z kodem źródłowym zawiera sekwencję bajtów.
+&nbsp;
+- #### Każdy z nich reprezentuje jeden znak w kodzie ASCII.
 #### &nbsp;
 ---
 
@@ -118,8 +117,7 @@ programy napisane w języku C przechowujemy z rozszerzeniem ```.c```, np. ```hel
 ```c
 #include <stdio.h>
 
-int main()
-{
+int main() {
     printf("hello, world\n");
 }
 ```
@@ -140,27 +138,25 @@ int main()
 ---
 ## Informacja to bity + kontekst
 
-#### Wszystkie informacje w systemie komputerowym przechowywane są za pomocą bitów. 
+- Wszystkie informacje w systemie komputerowym przechowywane są za pomocą bitów. 
 
-#### To co odróżnia poszczególne dane od siebie, to kontekst w jakim na nie patrzymy. 
+- To co odróżnia poszczególne dane od siebie, to kontekst w jakim na nie patrzymy. 
 
-#### Jako programiści musimy odróżniać sprzętowe reprezentacje liczb, gdyż są one różne dla różnych ich typów.
+- Jako programiści musimy odróżniać sprzętowe reprezentacje liczb, gdyż są one różne dla różnych ich typów.
 
 ---
 ## Programy są tłumaczone przez inne programy do różnych form
 
-#### Program, w postaci kodu źródłowego napisanego przez programistę jest tłumaczony do niskopoziomowej postaci - języka maszynowego.
+- Program, w postaci kodu źródłowego napisanego przez programistę jest tłumaczony do niskopoziomowej postaci - języka maszynowego.
 
-#### Język maszynowy to zestaw instrukcji dla procesora.
+- Język maszynowy to zestaw instrukcji dla procesora.
 
-#### Program ten następnie łączony jest z wymaganymi bibliotekami i przechowywany na dysku w formie binarnej (plik wykonywalny).
+- Program ten następnie łączony jest z wymaganymi bibliotekami i przechowywany na dysku w formie binarnej (plik wykonywalny).
 
 ---
 ## Programy są tłumaczone przez inne programy do różnych form
 
 ### Język maszynowy
-
-&nbsp;
 ```text
 00: 0005   5
 01: 0008   8
@@ -171,8 +167,8 @@ int main()
 13: 9C02   mem[02] <- R[C]
 14: 0000   halt
 ```
-&nbsp;
-<sup><sup>Dodawanie w abstrakcyjnym języku maszynowym TOY (Princeton University)</sup></sup>
+
+Dodawanie w abstrakcyjnym języku maszynowym TOY (Princeton University).
 
 ---
 
@@ -201,6 +197,7 @@ main:
         ret
   ```
 ---
+
 ## Programy są tłumaczone przez inne programy do różnych form
 
 
@@ -222,84 +219,216 @@ hello.c      hello.i       hello.s        hello.o        hello
 
 ---
 
-## Podstawowe pojęcia
+# Podstawowe pojęcia: typ
+
+Typ danych jest to zestaw atrybutów (cech) opisujących dane. Zazwyczaj dotyczy:
+
+- rozmiaru,
+- struktury,
+- zakresu wartości,
+- zbioru dozwolonych operacji.
+
+Przykładowy typ danych w C to **typ całkowity** ```int```.
 
 ---
 
-## Podstawowe pojęcia
+# Podstawowe pojęcia: typ ```int```
 
-- **program** - zestaw instrukcji wykonujący określone zadanie
+Przykładowy typ danych ```int``` na typowym 32-bitowym procesorze ma:
 
-- **proces** - program komputerowy uruchomiony w systemie operacyjnym
+- **rozmiar**: 4 bajty,
+- **zakresu wartości**: od -2147483648 do 2147483647,
+- **zbiór dozwolonych operacji**:
+  - unarnych: ```+```, ```-```, ```~```, ```&```, ```++```, ```--```,
+  - binarnych: ```=```, ```+```, ```-```, ```*```, ```/```, ```%```, ```<```, ```>```, ```==```, ```!=```, ```&```, ```|```, ```&&```, ```||```.
 
-- **język programowania** - formalnie zdefiniowany zbiór reguł dotyczący semantyki i syntaktyki (składni) określający jak pisać programy
+---
+
+# Podstawowe pojęcia
+
+- **instrukcja** - najmniejszy element programu, zawiera akcję do wykonania (np. przypisanie wartości do zmiennej, wywołanie funkcji). 
+
+- **program** - zestaw instrukcji wykonujący określone zadanie.
+
+- **proces** - program komputerowy uruchomiony w systemie operacyjnym.
+
+- **język programowania** - formalnie zdefiniowany zbiór reguł dotyczący semantyki i syntaktyki (składni) określający jak pisać programy.
 
 ---
 
 ## Języki programowania - podział
 
 ### Ze względu na:
-- paradygmat
-- sposób wykonywania 
-- kontrolę typów
-- poziom
+- paradygmat,
+- sposób wykonywania,
+- kontrolę typów,
+- poziom.
 
 ###
+
 ---
 
 ## Języki programowania - podział
 
-### Ze względu na paradygmat
+### Ze względu na paradygmat:
 
-- imperatywne
-&nbsp;
-- deklaratywne
-
----
-## Języki programowania - podział
-
-### Ze względu na paradygmat
-
- - imperatywne
-  *program jako sekwencja instrukcji zmieniających stan systemu*
+ - **imperatywne**
+  *program jako sekwencja instrukcji zmieniających stan systemu*;
   
-  - deklaratywne
-  *opisują jakie warunki ma spełniać końcowe rozwiązanie*
+  - **deklaratywne**
+  *program opisuje jakie warunki ma spełniać końcowe rozwiązanie*;
   
 ---
 ## Języki programowania - podział
 
-### Ze względu na paradygmat
+### Ze względu na paradygmat:
 
- - proceduralne
-&nbsp;
- - obiektowe
+ - **proceduralne**
+ *program podzielony na procedury, wykonujące określone operacje*;
+
+ - **obiektowe**:
+*program jako zbiór obiektów (łączących dane i zachowanie)*;
 
 ---
+
 ## Języki programowania - podział
-### Ze względu na sposób wykonywania
+### Ze względu na sposób wykonywania:
 
- - kompilowane
-&nbsp;
- - interpretowane
+ - **kompilowane**
+   *kod źródłowy programu zamieniany na kod wykonywalny przed uruchomieniem programu*;
+ - **interpretowane**
+   *programy wykonywane bezpośrednio przez interpreter bez konieczności zamiany na kod maszynowy*;
+ 
 ---
+
 ## Języki programowania - podział
 ### Ze względu na typowanie
 
-- statyczne
-&nbsp;
-- dynamiczne
+- **statyczne**
+  *typ zmiennych w programie jest znany w momencie kompilacji*;
+
+- **dynamiczne**
+  *typ jest określany w momencie wykonywania programu*;
+  
 
 ---
 ## Języki programowania - podział
 ### Ze względu na poziom
 
-- wysokopoziomowe
-&nbsp;
-- niskopoziomowe
+- **wysokopoziomowe**
+  *bardziej abstrakcyjne i oddzielają programistę od szczegółów sprzętowych*;
+
+- **niskopoziomowe**
+  *pozwalają na bezpośrednią kontrolę nad pamięcią i innymi zasobami systemu, składają się z instrukcji, które procesor może wykonywać bezpośrednio*;
 
 ---
 
 ## C
 
-### Imperatywny, proceduralny, statycznie typowany
+### Imperatywny, proceduralny, kompilowany, statycznie typowany.
+
+*Omawiamy specyfikację C99.*
+
+
+---
+
+## Pisanie programów
+
+1. Zdefiniuj cele dla programu.
+2. Zaprojektuj program.
+3. Napisz kod źródłowy.
+4. Skompiluj.
+5. Uruchom.
+6. Testuj i debuguj.
+7. Utrzymuj i zmieniaj według potrzeb kod źródłowy.
+
+---
+
+## Przykładowy program - struktura
+
+
+
+```c
+#include <stdio.h>
+
+int main(){
+    int num;
+    num = 1;
+    /* to jest komentarz */
+    printf("Hello world!\n");
+    return 0;
+}
+```
+
+---
+
+## Struktura programu
+  
+```text                           
+     +-----------+
++----|#include...|   <------ dyrektywy preprocesora
+|    +-----------+ 
+|
+|    +-----------+   
++----|int main() |   <------ funkcja główna, zwykle wywołuje inne funkcje zdefiniowane
+|    +-----------+           w programie i funkcje biblioteczne
+|              | 
+|              |         +------------+      
+|              +---------| instrukcje |  funkcje składają się z instrukcji 
+|                        +------------+                         
+|    +-----------+              |                   
++----|funkcja a()|             ...      
+|    +-----------+               
+|              |         +------------+          
+|              +---------| instrukcje |  funkcje zwykle zwracają wartość, która        
+|                        +------------+  może użyta w miejscu ich wywołania           
+|    +-----------+              |                                 
++----|funkcja b()|             ...                               
+|    +-----------+                                                                           
+```
+&nbsp;
+
+---
+
+## Kompilowanie i uruchomienie
+
+### Kompilator gcc (Linux)
+
+
+```bash
+$ gcc hello.c -o hello
+$ ./hello
+Hello world!
+```
+
+- wywołanie kompilatora gcc w ten sposób tworzy plik wykonywalny o nazwie ```hello```
+- flaga ```-o``` umożliwia nadanie nazwy plikowi wynikowemu
+- ```./``` przed nazwą programu (w lokalnym folderze) służy do uruchomienia go
+
+---
+
+## Inne flagi kompilatora
+
+- ```-Wall``` – włącza ważne ostrzeżenia, ułatwia znalezienie błędów.
+- ```-Werror``` – traktuje ostrzeżenia jako błędy.
+- ```-g``` – dodaje informacje potrzebne do debugowania (np. w GDB).
+- ```-O``` (lub ```-O2```, ```-O3```) – optymalizacja kodu.
+
+---
+
+## Kompilacja, uruchomienie, debugowanie - przykład
+
+---
+
+# Bibliografia
+
+1. Stephen Prata. 2013. C Primer Plus (6th Edition) (6th. ed.). Addison-Wesley Professional.
+2. https://en.cppreference.com/w/c
+3. Standard języka C (ISO/IEC 9899:TC3): https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf 
+
+---
+
+<!-- backgroundColor: '#eaeaea' -->
+<!-- _footer: &nbsp; -->
+
+# Dziękuję za uwagę!
