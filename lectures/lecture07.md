@@ -1,301 +1,1181 @@
-# Podstawy programowania w języku C
-### Wykład #7: Operacje na plikach
+<!--
+---
+marp: true
+footer: "| PwJC | Wykład #7 | dr inż. Michał Kępski | https://github.com/majk3l/C-Introduction/"
+_footer: "| e-mail: mkepski@ur.edu.pl |"
+paginate: true
+_paginate: false
+---
+-->
+
+# programowanie w języku C
+### Wykład #7: Pamięć wirtualna. Typowe błędy w C.
+
 *dr inż. Michał Kępski* 
 
 ---
 
-# ```<stdio.h>```
+# Pamięć wirtualna
 
+Pamięć wirtualna to mechanizm, który daje każdemu procesowi złudzenie, że ma wyłączny dostęp do pamięci operacyjnej. Każdy proces ma taki sam jednolity obraz pamięci, nazywany jego wirtualną przestrzenią adresową.
+
+---
+
+## Pamięć wirtualna procesu w systemie Linux:
+
+<!--
+<style scoped>
+h2 { margin-bottom: -6px; }
+pre {background-color: #ffffffff; border-color: #ffffffff}
+</style>
+-->
+
+```text
+Wysokie adresy ---> .---------------------------. 
+                    |                           |
+                    |            STOS           |    
+base pointer ->     |- - - - - - - - - - - - - -|   wskaźnik stosu
+                    |             |             |                        
+                    :             v             :
+                    .                           . 
+                    |---------------------------|
+                    |      Mapowana pamięć      | 
+                    | bibliotek współdzielonych | 
+                    |---------------------------|   
+                    .                           .   
+                    :                           :    
+                    |             ^             |
+                    |             |             |
+        brk  ->     |- - - - - - - - - - - - - -|   góra sterty
+                    |          STERTA           |
+                    |---------------------------|
+                    |           .bss            |   dane niezainicjowane
+                    |---------------------------|   
+                    |           .data           |   dane zainicjowane
+                    |---------------------------|
+                    |           .text           |   kod binarny
+                    |---------------------------|
+                 0  '---------------------------'
 ```
-fopen(), getc(), putc(), exit(), fclose(), fprintf(),
-fscanf(), fgets(), fputs() rewind(), fseek(), ftell(),
-fflush(), fgetpos(), fsetpos(), feof(), ferror() ungetc(),
-setvbuf(), fread(), fwrite()
-```
----
-
-# Czym jest plik?
-
-- Plik jest nazwaną sekcją pamięci trwałej, służy do przechowywania danych.
-- Z poziomu języka C jest on ciągłą sekwencją bajtów, z której każdy może zostać osobno odczytany.
 
 ---
-# Pliki binarne a pliki tekstowe
 
-- Cała zawartość pliku jest w formie binarnej (zera i jedynki). 
+## Program text (```.text```)
 
-- Jeśli plik używa kodów binarnych dla znaków (ASCII lub Unicode) do reprezentacji tekstu, to jest to plik o zawartości tekstowej.
+- Zawiera kod programu, czyli instrukcje maszynowe.
 
-- Jeśli wartości binarne reprezentują kod języka maszynowego, dane numeryczne czy kodowanie obrazu lub muzyki, to mówimy, że zawartość pliku jest binarna.
+- Jest to część pamięci tylko do odczytu (ang. *read-only*), co zapobiega przypadkowej modyfikacji kodu programu.
 
----
-# Pliki binarne a pliki tekstowe
-
-- Różne systemy używają różnych kodów do oznaczenia końca linii - Linux i MacOS ```\n``` a MS Dos czy Windows ```\r\n```.
-
-- Jeśli plik tekstowy zostaje otwarty w trybie tekstowym to biblioteka C zapewnia konwersję tych symboli do ```\n```.
-
-- Jeśli plik tekstowy otworzymy w trybie binarnym, dostaniemy takie symbole jakie zostały zapisane (nie ma żadnej konwersji).
+- Sekcja ```.text``` jest umieszczona na dole przestrzeni adresowej.
 
 ---
-# Buforowanie
 
-- Zawartość pliku nie jest wczytywana bajt po bajcie, lecz kopiowana do tymczasowego miejsca w pamięci, zwanego buforem.
-- Pozwala to znacznie przyśpieszyć operacje I/O.
-- Poszczególne elementy bufora mogą być pojedynczo analizowane.
+## Initialized data (```.data```)
+
+Przechowuje dane statyczne i globalne, które zostały zainicjalizowane przez program.
+
+Przykład: ```int x = 10;``` (zmienna globalna lub statyczna o określonej wartości początkowej).
+
+## Uninitialized data (```.bss```)
+
+Sekcja .bss zawiera zmienne globalne i statyczne, które nie zostały zainicjalizowane (lub zostały zainicjalizowane do zera).
+
+Przykład: ```int y```; (zmienna globalna lub statyczna bez przypisanej wartości).
 
 ---
-# Pliki – podstawowe informacje
 
-- C postrzega każdy plik jako sekwencyjny strumień bajtów. 
-- Każdy plik kończy się albo znacznikiem końca pliku, albo określonym numerem bajtu zapisanym w systemowej administracyjnej strukturze danych. 
-- Gdy plik jest otwierany, kojarzony jest z nim strumień. 
-- 3 pliki i związane z nimi strumienie są automatycznie otwierane podczas uruchomienia programu - standardowe wejście (```stdin```), standardowe wyjście (```stdout```) i standardowy błąd (```stderr```).
+## Sterta (*heap*)
+
+Obszar pamięci dynamicznej, który jest używany do alokacji pamięci w czasie działania programu.
+
+Funkcje takie jak ```malloc``` i ```free``` w języku C (lub ich odpowiedniki w innych językach) operują na tej części pamięci.
+
+Sterta rośnie w górę, zaczynając od granicy sekcji ```.bss```, a jej rozmiar jest kontrolowany przez wskaźnik ```brk```.
 
 ---
-# ```fopen()```
 
-- Funkcja zadeklarowana w ```stdio.```.
+## Mapowana pamięć bibliotek współdzielonych
 
-- Pierwszy argument to nazwa pliku do otwarcia, drugi argument to łańcuch określający tryb, w jakim plik ma być otwarty. 
+Obszar pamięci przeznaczony dla bibliotek współdzielonych (ang. *shared libraries*) oraz innych mapowanych obszarów pamięci (np. plików).
 
-- Po pomyślnym otwarciu pliku ```fopen()``` zwraca wskaźnik na plik, w przeciwnym razie zwraca pusty wskaźnik.
+Biblioteki współdzielone są ładowane tutaj, aby mogły być używane przez wiele procesów bez duplikacji w pamięci fizycznej.
 
-- Funkcje I/O mogą następnie użyć wskaźnika do operacji na pliku, wskaźnik jest typu ```FILE*```, a ```FILE``` jest typem pochodnym zdefiniowanym w ```stdio.h```.
+---
 
-- Wskaźnik nie wskazuje na rzeczywisty plik, lecz na obiekt danych zawierający informacje o pliku oraz informacje o buforze.
+## Stos użytkownika (ang. *user stack*)
 
---- 
-# Wczytywanie po znaku: ```getc()```
+Przestrzeń pamięci dla stosu, która przechowuje ramki wywołań funkcji, zmienne lokalne i inne dane kontekstowe funkcji.
+
+Ramka funkcji jest usuwana ze stosu po zakończeniu wywołania funkcji.
+
+Stos rośnie w dół, zaczynając od najwyższych adresów pamięci w przestrzeni adresowej procesu.
+
+W przypadku przepełnienia stosu może dojść do błędu zwanego *stack overflow*.
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
 
 ```c
-int getc(FILE* stream);
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |      argc: 1      |
+    int c = 100;                                     |      argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {   <---            |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
 ```
 
-Reads the next character from the given input stream.
-
-### Parameters
-```stream``` - to read the character from 
-
-### Return value
-
-On success, returns the obtained character as an ```unsigned char converted``` to an ```int```. On failure, returns ```EOF```.
-
-If the failure has been caused by end-of-file condition, additionally sets the *eof* indicator (see ```feof()```) on stream. If the failure has been caused by some other error, sets the error indicator (see ```ferror()```) on stream. 
+*Przykład pochodzi z kursu CS107: Computer Organization & Systems, Stanford University, https://web.stanford.edu/class/cs107/*
 
 ---
-# End-of-file
 
-- Program odczytujący dane musi się zatrzymać po osiągnięciu końca pliku. 
-- Funkcja ```getc()``` zwraca specjalną wartość ```EOF```, jeśli próbuje odczytać jakiś znak i odkrywa, że dotarła do końca pliku.
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
 
-- Aby uniknąć próby odczytania z pliku po osiągnięciu jego końca, można stosować przykładowo następujący warunek pętli:
+## Stos użytkownika (ang. *user stack*)
 
 ```c
-while (( ch = getc(fp)) != EOF)
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |      argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                      <---            |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
 ```
 
 ---
-# ```fclose()```
 
-- Zamyka plik określony przez parametr (wskaźnik do pliku).
-- W razie potrzeby opróżnia wcześniej bufor (operacja *flush*). 
-- Zwraca wartość ```0``` jeśli zamknięcie pliku się udało, w przeciwnym razie zwraca ```EOF```.
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                      <---            |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
 
 ---
-#  Prosty przykład - zapisywanie
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |         |         |
+                                                     |         v         |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                            <---            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                          <---            |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                     <---            |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                            <---            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |         |         |
+    f1();                                            |         v         |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                          <---            |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |f2                 |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |___________________|
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                       <---            |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |f2                 |
+    f1();                                            |                   |
+    f2();                                            |d:0                |
+    printf("Finished!");                             |___________________|
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                    <---            |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |f2                 |
+    f1();                                            |                   |
+    f2();                                            |d:0                |
+    printf("Finished!");                             |___________________|
+    return 0;                                        |         ^         |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                    <---            |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                    <---            |f1                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |c:100              |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |         ^         |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                    <---            |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   |
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |         |         |
+                                                     |         V         |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   |
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                            <---            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                          <---            |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f2                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                       <---            |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f2                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |d:0                |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                    <---            |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |f2                 |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |d:0                |
+    int a = 39;                                      |___________________| 
+    int b = 10;                                      |         ^         |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");            <---             |                   |
+    return 0;                                        |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                       <---             |                   |
+}                                                    +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |___________________|   
+    int d = 0;                                       |main               |
+}                                                    |                   |
+void f1() {                                          |a:39  argc: 1      |
+    int c = 100;                                     |b:10  argv: 0x7ff..|
+    f2();                                            |___________________|
+}                                                    |         ^         |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                   <---             +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre {font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {font-size: 14pt;}
+</style>
+-->
+
+## Stos użytkownika (ang. *user stack*)
+
+```c
+#include <stdio.h>                                            STOS
+                                                     +-------------------+
+void f2() {                                          |                   |
+    int d = 0;                                       |                   |
+}                                                    |                   |
+void f1() {                                          |                   |
+    int c = 100;                                     |                   |
+    f2();                                            |                   |
+}                                                    |                   |
+                                                     |                   |
+int main(int argc, char *argv[]) {                   |                   |
+    int a = 39;                                      |                   | 
+    int b = 10;                                      |                   |
+    f1();                                            |                   |
+    f2();                                            |                   |
+    printf("Finished!");                             |                   |
+    return 0;                                        |                   |
+}                                   <---             +-------------------+ 
+```
+
+---
+
+<!--
+<style scoped> 
+pre { font-size: 20pt;  background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+</style>
+-->
+
+## Przypadek kiedy tworzenie zmiennych na stosie zawodzi
 
 ```c
 #include <stdio.h>
 
-int main() {
-   FILE *pF = fopen("example00.txt", "w");
-   fprintf(pF, "Test text");
-   fclose(pF);
-
-   return 0;
-}
-```
-
----
-# ```fprintf()```
-
-```c
-int fprintf(FILE* stream, const char *format, ...);
-```
-
-Loads the data from the given locations, converts them to character string equivalents and writes the results to output stream ```stream```.
-
-### Parameters
-```stream``` - to read the character from 
-```format``` 	- 	pointer to a null-terminated multibyte string specifying how to interpret the data
-```...``` 	- 	arguments specifying data to print.
-
-### Return value
-
-Number of characters transmitted to the output stream or negative value if an output error or an encoding error (for string and character conversion specifiers) occurred.
-
----
-#  Mode strings
-
-|  Code  |  Meaning  |  Explanation  |  Action if file   already exists  |  Action if file   does not exist  |
-|:---:|:---:|:---:|:---:|:---:|
-|  "r"  |  read  |  Open a file for reading  |  read from start  |  failure to open  |
-|  "w"  |  write  |  Create a file for writing  |  destroy contents  |  create new  |
-|  "a"  |  append  |  Append to a file  |  write to end  |  create new  |
-|  "r+"  |  read extended  |  Open a file for read/write  |  read from start  |  error  |
-|  "w+"  |  write extended  |  Create a file for read/write  |  destroy contents  |  create new  |
-|  "a+"  |  append extended  |  Open a file for read/write  |  write to end  |  create new  |
-
-File access mode flag "b" can optionally be specified to open a file in binary mode.
-
----
-#  Prosty przykład - wczytywanie
-
-```c
-#include <stdio.h>
-
-int main() {
-   char buffer[255];
-   
-   FILE *pF = fopen("poem.txt", "r");
-   if(pF == NULL) {
-      printf("Unable to open file!\n");
-   }
-   else {
-      while(fgets(buffer, 255, pF) != NULL) {
-         printf("%s", buffer);
-      }
-   }
-   fclose(pF);
-
-   return 0;
-}
-```
-
----
-#  ```fgets()```
-
-```c
-char* fgets(char* str, int count, FILE* stream);
-```
-
-Reads at most ```count - 1``` characters from the given file stream and stores them in the character array pointed to by ```str```. Parsing stops if a newline character is found, in which case str will contain that newline character, or if ```EOF``` occurs. If bytes are read and no errors occur, writes a null character at the position immediately after the last character written to ```str```.
-
-### Parameters
-- ```str``` 	- pointer to an element of a char array
-- ```count``` 	- maximum number of characters to write (typically the length of ```str```)
-- ```stream``` 	- file stream to read the data from
-
-### Return value
-
-str on success, null pointer on failure. 
-
----
-#  ```fscanf()```
-
-```c
-int fscanf(FILE* stream, const char* format, ... );
-```
-
-Reads data from file stream ```stream```, interprets it according to format and stores the results into given locations.
-
-Parameters
-```stream``` - 	input file stream to read from
-```format``` - 	pointer to a null-terminated character string specifying how to read the input.
-```...``` 	- 	receiving arguments. 
-
-### Return value
-
-Number of receiving arguments successfully assigned (which may be zero in case a matching failure occurred before the first receiving argument was assigned), or ```EOF``` if input failure occurs before the first receiving argument was assigned.
-
----
-# ```fgets()``` vs ```fscanf()```
-
- - ```fgets()``` czyta tekst do znaku nowej linii
- - ```fscanf()``` z *format specifier* ```%s``` wczytuje tekst do napotkania pierwszego białego znaku (takiego jak spacja, tab, znak nowej linii).
-
----
-# Dostęp swobodny (*random access*)
-
-- C umożliwia swobodny dostęp do plików - odczytawanie dowolnej liczby bajtów danych z dowolnego miejsca pliku
-- funkcje ```fseek()``` i ```ftell()```
-
----
-# ```fseek()```
-
-```c
-int fseek(FILE* stream, long offset, int origin);
-```	
-Sets the file position indicator for the file stream ```stream``` to the value pointed to by ```offset```. If the stream is open in binary mode, the new position is exactly ```offset``` bytes measured from the beginning of the file if ```origin``` is ```SEEK_SET```, from the current file position if ```origin``` is ```SEEK_CUR```, and from the end of the file if ```origin``` is ```SEEK_END```. Binary streams are not required to support ```SEEK_END```. If the stream is open in text mode, the only supported values for ```offset``` are zero and a value returned by an earlier call to ```ftell```.
-
-### Parameters
-```stream```	- 	file stream to modify
-```offset``` 	- 	number of characters to shift the position relative to ```origin```
-```origin``` 	- 	position to which offset is added, one of the following values: ```SEEK_SET```, ```SEEK_CUR```, ```SEEK_END```
-
-### Return value
-
-​0​ upon success, nonzero value otherwise. 
-
----
-# ```ftell()```
-```c
-long ftell( FILE *stream );
-```
-
-Returns the file position indicator for the file stream ```stream```. If the stream is open in binary mode, the value obtained by this function is the number of bytes from the beginning of the file. If the stream is open in text mode, the value returned by this function is unspecified and is only meaningful as the input to ```fseek()```.
-
-### Parameters
-```stream```  -  file stream to examine
-
-### Return value
-
-File position indicator on success or ```-1L``` if failure occurs.
-
-On error, the ```errno``` variable is set to implementation-defined positive value. 
-		
----
-# Przykład z ```fseek``` i ```ftell```
-
-```c
-#include <stdio.h>
-#define CNTL_Z '\032'
-
-int main() {
-    FILE *pF = fopen("poem.txt", "r");
-    char ch, buffer[255];
-    if(pF == NULL) {
-        printf("Unable to open file!\n");
+char *create_string(char ch, int num) { 
+    char new_str[num + 1];
+    for (int i = 0; i < num; i++) {
+        new_str[i] = ch; 
     }
-    else {
-        long count, last;
-        fseek(pF, 0L, SEEK_END); /* go to end of file */ 
-        last = ftell(pF);
-        for (count = 1L; count <= last; count++) {
-            fseek(pF, -count, SEEK_END); /* go backward */ 
-            ch = getc(pF);
-            if (ch != CNTL_Z && ch != '\r') { /* MS-DOS files */
-                putchar(ch); 
-            }
-        } 
-        putchar('\n'); 
-    }
-    fclose(pF);
+    new_str[num] = '\0';
+    return new_str; 
+}
+
+int main(int argc, char *argv[]) { 
+    char *str = create_string('a', 4); 
+    printf("%s", str); // want "aaaa" 
     return 0;
 }
 ```
----
-# Uwagi
-
-- Jeśli chcemy wymusić zapisanie zawartości bufora do pliku używamy ```fflush()```.
-- Funkcje ```feof()``` i ```ferror()``` podają powód niepowodzenia operacji I/O.
-- To, jak C interpretuje wejściowy lub wyjściowy strumień bajtów, zależy od tego, jakich funkcji wejścia/wyjścia używamy (bajty, tekst, tekstowa reprezentacja liczb).
-- C rozróżnia zapisywanie danych i dołączanie (*appending*) danych. Kiedy dane są zapisywane do pliku, nadpisują to, co było tam wcześniej. Kiedy plik jest otwierany do dołączania, dane dodawane są na koniec, zachowując oryginalną zawartość pliku.
+**Dlaczego to nie zadziała?**
 
 ---
+
+<!--
+<style scoped> 
+pre { font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {margin-top: -38px;}
+</style>
+-->
+
+## Przypadek kiedy tworzenie zmiennych na stosie zawodzi
+
+```c
+#include <stdio.h>                                         STOS
+                                                  +---------------------+
+char *create_string(char ch, int num) {           |_____________________|
+    char new_str[num + 1];                        |main                 |
+    for (int i = 0; i < num; i++) {               |                     |
+        new_str[i] = ch;                          |argc:1  argv:0x7ff.. |
+    }                                             |        str:0xd03a6..|<.
+    new_str[num] = '\0';                          |_____________________| :
+    return new_str;                       <---    |create_string        | :
+}                                                 |                     | :
+                                                  |ch:'a'   num:3       | :
+int main(int argc, char *argv[]) {                |                     | : 
+    char *str = create_string('a', 3);            |         '\0'        | :
+    printf("%s", str);                            |         'a'         | : 
+    return 0;                                     |         'a'         | :
+}                                                 | new_str:'a'  .......|.:
+                                                  |_____________________|
+                                                  |                     |
+                                                  +---------------------+ 
+```      
+**Zwracamy adres łańcucha tekstowego z ramki stosu, która zaraz zostanie usunięta!** 
+
+---
+
+<!--
+<style scoped> 
+pre { font-size: 20pt; background-color: #ffffffff; border-color: #ffffffff; line-height: 1;}
+p {margin-top: -20px;}
+</style>
+-->
+
+## Rozwiązanie? ```malloc``` :two_hearts:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+char *create_string(char ch, int num) {
+    char *new_str = malloc(num + 1);
+    for (int i = 0; i < num; i++) { 
+        new_str[i] = ch;
+    }
+    new_str[num] = '\0'; return new_str;
+}
+
+int main(int argc, char *argv[]) { 
+    char *str = create_string('a', 3); 
+    printf("%s", str); 
+    return 0;
+}
+```
+Tablica tworzona jest na stercie, będzie tam dopóki nie zwolnimy pamięci funkcją ```free()```.
+
+---
+
+## Wskazówki dot. używania ```free()```
+
+- Gdy nie potrzebujemy zaalokowanej pamięci, odpowiadamy za to, aby ją zwolnić.
+- Nawet jeśli mamy wiele wskaźników wskazujących na ten sam blok pamięci, każdy blok pamięci powinien zostać zwolniony tylko raz.
+- Musimy zwolnić dokładnie ten adres, który dostaliśmy podczas wywołania funkcji alokującej pamięć (a nie tylko adres części przydzielonej pamięci). Robimy więc tak:
+   ```c
+   char *ptr = malloc(10);
+   free(ptr);
+   ```
+   a nie np.:
+   ```c
+   free(ptr + 1);
+   ```
+
+---
+
+## Wskazówki dot. używania ```free()```
+
+Wyciekiem pamięci nazywamy sytuację, gdy nie zwalniamy wcześniej zaalokowanej pamięci:
+
+```c
+char *str = strdup("hello");
+str = strdup("hi"); 
+```
+
+- Pierwsze wywołanie ```strdup``` alokuje pamięć na stercie i przypisuje adres do ```str```.
+- Drugie wywołanie ```strdup``` alokuje nowy blok pamięci i przypisuje jego adres do ```str```, nadpisując poprzedni adres.
+- Poprzednio zaalokowana pamięć (dla ```"hello"```) zostaje utracona, ponieważ nie ma już wskaźnika wskazującego na nią, a więc nie można jej zwolnić za pomocą ```free()```.
+
+---
+
+# Typowe błędy (początkujących) w C
+
+*Opracowane na podstawie: http://pacman128.github.io/internal/common_c_errors/*
+
+---
+
+## Zapomninanie o ```break``` w instrukcji ```switch```
+
+
+W języku C instrukcja ```switch``` nie przerywa automatycznie po napotkaniu pasującego ```case```:
+
+```c
+#include <stdio.h>
+
+int main() {
+    int x = 1;
+    switch(x) {
+        case 1: printf("Jeden ");
+        case 2: printf("Dwa ");
+        default: printf("Domyślny");
+    }
+    return 0;
+}
+```
+
+```text
+Jeden Dwa Domyślny
+```
+
+---
+
+## Zapomninanie o ```break``` w instrukcji ```switch```
+
+Rozwiązanie:
+
+```c
+#include <stdio.h>
+
+int main() {
+    int x = 1;
+    switch(x) {
+        case 1: printf("Jeden "); break;
+        case 2: printf("Dwa "); break;
+        default: printf("Domyślny"); 
+    }
+    return 0;
+}
+```
+```text
+Jeden
+```
+
+---
+
+## Użycie ```=``` zamiast ```==```
+
+Operator ```=``` w języku C służy wyłącznie do przypisania wartości i zwraca przypisaną wartość.
+Z kolei operator ```==``` jest używany do porównań i zwraca wartość całkowitą: ```0``` dla fałszu lub ```1``` dla prawdy.
+
+Z tego powodu kompilator C nie zgłasza błędu, gdy przez przypadek użyjemy ```=``` zamiast ```==```, mimo że prawdopodobnie chcieliśmy porównać wartości:
+
+```c
+int x = 5;
+if (x = 6)                // nadpisaliśmy, a prawdopodobnie chcieliśmy porównać
+    printf("x equals 6"); // wykona się, bo przypisanie zwraca 6 (true)
+```
+
+---
+
+## Jak zapobiec przypadkowemu ```=``` zamiast ```==``` w ```if```?
+
+- Uważnie używaj operatorów ```=``` i ```==```.
+- W niektórych przypadkach można odwrócić kolejność porównania, aby kompilator wykrył błąd:
+   ```c
+   if (6 == x) // jeśli użyjemy = to dostaniemy błąd, bo 6 nie jest lvalue
+   ```
+- Można też kompilować z flagami, które generują więcej warningów, przykładowo użycie ```-Wall``` w GCC daje nam:
+
+   ```text
+   main.c:6:9: warning: suggest parentheses around assignment used as truth value
+   ```
+
+---
+
+## Błędy przy używaniu ```scanf()```
+
+Istnieją dwa często spotykane błędy związane z użyciem funkcji ```scanf()```:
+
+### Brak operatora adresu (```&```)
+
+- ```scanf()``` wymaga adresu zmiennej, aby móc zapisać do niej dane.
+- Oznacza to, że w przypadku większości typów należy użyć operatora ```&```, aby przekazać adres.
+
+### Niewłaściwy format dla operandu
+
+- Jeśli format podany w ```scanf()``` nie pasuje do typu zmiennej, wynik może być nieprzewidywalny.
+    
+---
+
+## Rozmiar tablic w C
+
+Tablice w języku C zawsze zaczynają się od indeksu 0. Oznacza to, że tablica składająca się z 10 elementów, zadeklarowana jako:
+
+```c
+int a[10];
+```
+
+będzie miała prawidłowe indeksy od 0 do 9, a nie do 10!
+
+- Zawsze sprawdzaj, czy indeksy używane w tablicach mieszczą się w ich zakresie.
+
+- Pamiętaj, że jeśli tablica ma ```n``` elementów, to ostatni element znajduje się pod indeksem ```n - 1```.
+
+---
+
+## Sprawdzanie rozmiaru tablic przed i po przekazaniu do funkcji
+
+
+Z wykładu 4. wiemy, że:
+
+- *Identyfikator tablicy w wywołaniu automatycznie przekształca się w wskaźnik do jej pierwszego elementu (array decays into pointer).*
+
+- *W funkcji otrzymujemy wskaźnik do pierwszego elementu przekazanej tablicy.*
+
+oraz, że operator ```sizeof```:
+
+- *w przypadku tablic zwraca rozmiar całej tablicy w bajtach.*
+
+---
+
+## Sprawdzanie rozmiaru tablic i rozmiaru tablic przekazanych do funkcji
+
+Oznacza to, że jeśli: 
+
+- zadeklarujemy tablicę, np. ```int tab[10]``` i użyjemy ```sizof(tab)```, dostaniemy rozmiar całej tablicy w bajtach (najprawdopodobniej 40),
+
+- jeśli mamy funkcję, która przyjmuje tablicę typu ```int``` i przekażemy do niej  tablicę ```tab```, to: *"Identyfikator tablicy w wywołaniu automatycznie przekształci się w wskaźnik".*
+
+- jeśli w funkcji sprawdzimy rozmiar tego już wskaźnika, to dostaniemy rozmiar *wskaźnika*, nie tablicy!
+
+---
+
+## Przykład:
+
+```c
+#include <stdio.h>
+
+void printSize(int *arr) {
+    printf("Rozmiar w funkcji: %zuB\n", sizeof(arr)); 
+}
+
+int main() {
+    int tab[10];
+    printf("Rozmiar tab: %zuB\n", sizeof(tab)); 
+    printSize(tab);
+    return 0;
+}
+```
+```
+Rozmiar tab: 40B
+Rozmiar w funkcji: 8B
+```
+
+---
+
+## Dzielenie całkowite
+
+Język C używa operatora ```/``` zarówno do dzielenia rzeczywistego, jak i całkowitego. 
+
+Jeśli oba operandy są typu całkowitoliczbowego, zostanie użyte dzielenie całkowite. W przeciwnym razie zostanie wykonane dzielenie rzeczywiste.
+
+```c
+double half = 1 / 2;  // wynikiem będzie 0.0, nie 0.5!
+```
+Poprawnie:
+```c
+double half = 1.0 / 2; // wynikiem jest 0.5
+```
+
+Jeśli oba operandy są zmiennymi całkowitoliczbowymi, a chcemy wykonać dzielenie rzeczywiste, należy rzutować jedną ze zmiennych na typ ```double``` lub ```float```.
+
+---
+
+## Porównywanie łańcuchów znaków za pomocą ```==```
+
+Nigdy nie używamy operatora ```==``` do porównywania wartości łańcuchów znaków!
+
+Łańcuchy w C są tablicami typu ```char```, a nazwa tablicy działa jak wskaźnik do jej pierwszego elementu. Dlatego operator ```==``` porównuje adresy w pamięci, a nie zawartość łańcuchów.
+
+---
+
+## Porównywanie łańcuchów znaków za pomocą ```==```
+
+```c
+char st1[] = "abc";
+char st2[] = "abc";
+
+if(st1 == st2)
+    printf("Yes");
+else
+    printf("No");
+```
+
+```
+No
+```
+
+Aby porównać zawartość łańcuchów znaków, należy użyć funkcji ```strcmp``` z biblioteki ```<string.h>```.
+
+---
+
+## Niepozostawienie miejsca na znak końca ciągu (null terminator)
+
+Ciąg znaków w języku C musi zawierać znak końca ciągu (```\0```) na końcu danych tekstowych. Częstym błędem jest niezarezerwowanie miejsca na ten dodatkowy znak.
+
+W deklaracji ```char str[30];``` tablica może przechowywać maksymalnie 29 znaków danych (a nie 30), ponieważ jeden z miejsc musi być zarezerwowany dla ```\0```.
+
+### Dlaczego to ważne?
+
+Brak miejsca na znak końca ciągu może prowadzić do błędów odczytu nieokreślonych danych spoza zakresu tablicy (tzw. *buffer overrun*).
+    
+Funkcje operujące na ciągach (```strlen```, ```printf```) polegają na obecności znaku ```\0```. 
+
+---
+
+## Błędy w pętlach
+
+W języku C pętla powtarza następującą po niej instrukcję: 
+
+```c
+int x = 5;
+while (x > 0);
+    x--;
+```
+
+Ten kod powoduje nieskończoną pętlę - średnik po ```while``` to pusta instrukcja, którą pętla ma powtarzać. W efekcie ciało pętli nie wykonuje żadnych działań.
+
+### Inne typowe błędy w pętlach:
+
+- **Za dużo lub za mało iteracji** - niewłaściwe warunki pętli mogą prowadzić do nieoczekiwanej liczby powtórzeń.
+
+- **Brak zmian zmiennej sterującej** - może prowadzić do nieskończonych pętli.
+
+---
+
+<!--
+<style scoped> li {font-size: 20pt} </style>
+-->
+
 # Bibliografia
 
 1. Stephen Prata. 2013. C Primer Plus (6th Edition) (6th. ed.). Addison-Wesley Professional.
-2. https://en.cppreference.com/w/c
-3. Standard języka C (ISO/IEC 9899:TC3): https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf 
+2. Stephen G. Kochan. 2014. Programming in C (4th. ed.). Addison-Wesley Professional.
+3. Randal E. Bryant and David R. O'Hallaron. 2010. Computer Systems: A Programmer's Perspective (2nd. ed.). Addison-Wesley Publishing Company.
+4. https://en.cppreference.com/w/c
+5. Standard języka C (ISO/IEC 9899:TC3)
+6. Lecture 10. CS107: Computer Organization & Systems, Stanford University, https://web.stanford.edu/class/cs107/
+7. http://pacman128.github.io/internal/common_c_errors/
+
+---
+
+<!-- backgroundColor: '#eaeaea' -->
+<!-- _footer: &nbsp; -->
+
+# Dziękuję za uwagę!
